@@ -66,6 +66,43 @@ sys_dup(void)
   return fd;
 }
 
+int sys_dup2(void) {
+  // dup2(fd, fd_new)
+
+  int fd;
+  struct file *f;
+
+  // check fd is valid
+  if (argfd(0, &fd, &f) < 0) {
+    return -1;
+  }
+
+  // check fd_new is valid
+  int fd_new;
+  if (argint(1, &fd_new) < 0) {
+    return -1;
+  }
+  if (fd_new < 0 || fd_new >= NOFILE) {
+    return -1;
+  }
+
+  if (fd == fd_new) {
+    return fd_new;
+  }
+
+  // if fd_new already used, close it
+  struct file *f_new;
+  if ((f_new = myproc()->ofile[fd_new]) != 0) {
+    myproc()->ofile[fd_new] = 0;
+    fileclose(f_new);
+  }
+
+  // allocate fd_new to the file
+  myproc()->ofile[fd_new] = f;
+  filedup(f);
+  return fd_new;
+}
+
 int
 sys_read(void)
 {
