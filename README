@@ -1,3 +1,9 @@
+See my changes for homeworks.
+Course page: https://pdos.csail.mit.edu/6.828/2017/schedule.html
+Notes: https://docs.google.com/document/d/1QlL1FR7Wc9Bilay8IoOOLPZlGKpCuxxmnlfs6v7Cez0/edit?usp=sharing
+
+---
+
 xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
 Version 6 (v6).  xv6 loosely follows the structure and style of v6,
 but is implemented for a modern x86-based multiprocessor using ANSI C.
