@@ -14,6 +14,8 @@ extern uint vectors[];  // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint ticks;
 
+int mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm);
+
 void
 tvinit(void)
 {
@@ -77,6 +79,26 @@ trap(struct trapframe *tf)
             cpuid(), tf->cs, tf->eip);
     lapiceoi();
     break;
+  case T_PGFLT: {
+    // allocate one new page for page fault
+    uint a = PGROUNDDOWN(rcr2());
+    char *mem = kalloc();
+    if(mem == 0){
+      cprintf("page fault, new page, out of memory\n");
+      // not break here
+    } else {
+      memset(mem, 0, PGSIZE);
+      if(mappages(myproc()->pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
+        cprintf("page fault, new page, out of memory (2)\n");
+        kfree(mem);
+        // not break here
+      } else {
+//        cprintf("page fault at 0x%x, new page VA at 0x%x, PA at 0x%x\n", rcr2(),
+//        a, (uint)mem);
+        break;
+      }
+    }
+  }
 
   //PAGEBREAK: 13
   default:
