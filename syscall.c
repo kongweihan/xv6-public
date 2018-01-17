@@ -105,6 +105,7 @@ extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_date(void);
 extern int sys_dup2(void);
+extern int sys_alarm(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -130,13 +131,14 @@ static int (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 [SYS_date]    sys_date,
 [SYS_dup2]    sys_dup2,
+[SYS_alarm]   sys_alarm,
 };
 
 const char* const syscall_name[] = {
   "fork", "exit", "wait", "pipe", "read", "kill",
   "exec", "fstat", "chdir", "dup", "getpid", "sbrk",
   "sleep", "uptime", "open", "write", "mknod", "unlink",
-  "link", "mkdir", "close", "date", "dup2" };
+  "link", "mkdir", "close", "date", "dup2", "alarm" };
 
 
 void print_syscall(struct proc *curproc, int num) {

@@ -57,6 +57,19 @@ trap(struct trapframe *tf)
       release(&tickslock);
     }
     lapiceoi();
+
+    // alarm timer
+    struct proc *curproc = myproc();
+    if (curproc != 0 && (tf->cs & 3) == 3 && curproc->alarmticks > 0) {
+      curproc->alarmleft--;
+      if (curproc->alarmleft == 0) {
+        curproc->alarmleft = curproc->alarmticks;
+        tf->esp -= 4;
+        *(uint*)(tf->esp) = tf->eip;
+        tf->eip = (uint) curproc->alarmhandler;
+//        curproc->alarmhandler(); // doesn't work
+      }
+    }
     break;
   case T_IRQ0 + IRQ_IDE:
     ideintr();
