@@ -360,6 +360,17 @@ iunlockput(struct inode *ip)
   iput(ip);
 }
 
+uint get_block(struct inode *ip, uint addr, uint idx) {
+  struct buf *bp = bread(ip->dev, addr);
+  uint *a = (uint*) bp->data;
+  if ((addr = a[idx]) == 0) {
+    a[idx] = addr = balloc(ip->dev);
+    log_write(bp);
+  }
+  brelse(bp);
+  return addr;
+}
+
 //PAGEBREAK!
 // Inode content
 //
@@ -370,11 +381,16 @@ iunlockput(struct inode *ip)
 
 // Return the disk block address of the nth block in inode ip.
 // If there is no such block, bmap allocates one.
+
+// Homework 10: big file
+// addrs in inode still has 13 elements, addrs[0]-[10] are NDIRECT block number
+// addrs[11] is block number of the indirect block table block
+// addrs[12] is block number of the doubly-indirect block table block
+// So, NDIRECT change to 11, NINDIRECT stay the same
 static uint
 bmap(struct inode *ip, uint bn)
 {
-  uint addr, *a;
-  struct buf *bp;
+  uint addr;
 
   if(bn < NDIRECT){
     if((addr = ip->addrs[bn]) == 0)
@@ -387,13 +403,19 @@ bmap(struct inode *ip, uint bn)
     // Load indirect block, allocating if necessary.
     if((addr = ip->addrs[NDIRECT]) == 0)
       ip->addrs[NDIRECT] = addr = balloc(ip->dev);
-    bp = bread(ip->dev, addr);
-    a = (uint*)bp->data;
-    if((addr = a[bn]) == 0){
-      a[bn] = addr = balloc(ip->dev);
-      log_write(bp);
+    return get_block(ip, addr, bn);
+  }
+  bn -= NINDIRECT;
+
+  if (bn < NINDIRECT2) {
+    // Load doubly-indirect block, allocating if necessary.
+    if ((addr = ip->addrs[NDIRECT + 1]) == 0) {
+      ip->addrs[NDIRECT + 1] = addr = balloc(ip->dev);
     }
-    brelse(bp);
+
+    addr = get_block(ip, addr, bn / NINDIRECT);
+    addr = get_block(ip, addr, bn % NINDIRECT);
+
     return addr;
   }
 
