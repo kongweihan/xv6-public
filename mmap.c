@@ -32,15 +32,29 @@ calculate_sqrts(double *sqrt_pos, int start, int nr)
     sqrt_pos[i] = sqrt((double)(start + i));
 }
 
+static void* prev_page_mapped = 0;
+
 static void
 handle_sigsegv(int sig, siginfo_t *si, void *ctx)
 {
-  // Your code here.
-
-  // replace these three lines with your implementation
   uintptr_t fault_addr = (uintptr_t)si->si_addr;
-  printf("oops got SIGSEGV at 0x%lx\n", fault_addr);
-  exit(EXIT_FAILURE);
+  if (prev_page_mapped) {
+    munmap(prev_page_mapped, page_size);
+  }
+
+  uintptr_t page_start = align_down(fault_addr, page_size);
+
+  prev_page_mapped = mmap((void*) page_start, page_size, PROT_READ | PROT_WRITE,
+       MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
+
+  if (prev_page_mapped < 0) {
+    fprintf(stderr, "\nmmap error: %d\n", (int) prev_page_mapped);
+    return;
+  }
+
+  int pos = (double*)page_start - sqrts;
+  int nr = page_size / sizeof(double);
+  calculate_sqrts((double*)page_start, pos, nr);
 }
 
 static void
